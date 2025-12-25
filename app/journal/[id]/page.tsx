@@ -7,29 +7,49 @@ import { cn } from "@/lib/utils";
 import { liquidGlassCard, liquidGlassButton } from "@/lib/liquid-glass";
 import { Button } from "@/components/ui/button";
 import { getEntry, deleteEntry, type JournalEntry } from "@/lib/journal-store";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Plus, Sparkles, Trash2 } from "lucide-react";
 
-function formatDateTime(ts: number) {
-  return new Date(ts).toLocaleString("en-GB", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
+function formatTime(ts: number) {
+  return new Date(ts).toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
   });
 }
 
+function formatDay(ts: number) {
+  return new Date(ts).toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+  });
+}
+
 export default function JournalEntryPage() {
-  const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { id } = useParams<{ id: string }>();
+
   const [entry, setEntry] = useState<JournalEntry | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    setEntry(getEntry(id));
+    const load = () => {
+      const found = getEntry(id);
+      setEntry(found);
+      setLoaded(true);
+    };
+
+    load();
+
+    window.addEventListener("focus", load);
+    return () => window.removeEventListener("focus", load);
   }, [id]);
 
-  const title = useMemo(() => entry?.title ?? "Untitled", [entry]);
+  const title = useMemo(() => {
+    if (!entry) return "Journal";
+    return entry.title?.trim() ? entry.title : "Untitled";
+  }, [entry]);
+
+  if (!loaded) return null;
 
   if (!entry) {
     return (
@@ -38,11 +58,19 @@ export default function JournalEntryPage() {
           <section className={cn(liquidGlassCard, "p-6")}>
             <p className="text-sm font-medium tracking-tight">Not found</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              This entry doesn’t exist (or was deleted).
+              This journal entry doesn’t exist (or was deleted).
             </p>
-            <Button variant="glass" asChild className="mt-4">
-              <Link href="/journal">Back to journal</Link>
-            </Button>
+            <div className="mt-4 flex gap-2">
+              <Button variant="glass" asChild>
+                <Link href="/journal">Back to journal</Link>
+              </Button>
+              <Button variant="glass" asChild>
+                <Link href="/journal/new">
+                  <Plus className="h-4 w-4" />
+                  New entry
+                </Link>
+              </Button>
+            </div>
           </section>
         </div>
       </main>
@@ -52,7 +80,6 @@ export default function JournalEntryPage() {
   return (
     <main className="relative min-h-screen overflow-hidden">
       <div className="relative mx-auto max-w-2xl px-4 pb-28 pt-6">
-        {/* Header */}
         <header className="flex items-center justify-between">
           <Link
             href="/journal"
@@ -67,41 +94,72 @@ export default function JournalEntryPage() {
             <h1 className="text-base font-medium tracking-tight">{title}</h1>
           </div>
 
-          <button
-            className={cn(liquidGlassButton, "h-10 w-10 text-foreground")}
-            aria-label="Delete"
-            title="Delete"
-            onClick={() => {
-              if (!confirm("Delete this entry?")) return;
-              deleteEntry(entry.id);
-              router.push("/journal");
-            }}
-          >
-            <Trash2 className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/journal/${entry.id}/edit`}
+              className={cn(
+                liquidGlassButton,
+                "h-10 px-3 text-foreground inline-flex items-center gap-2"
+              )}
+              aria-label="Edit entry"
+              title="Edit entry"
+            >
+              Edit
+            </Link>
+
+            <button
+              type="button"
+              className={cn(liquidGlassButton, "h-10 w-10 text-foreground")}
+              aria-label="Delete entry"
+              title="Delete entry"
+              onClick={() => {
+                if (!confirm("Delete this entry? This can’t be undone."))
+                  return;
+                deleteEntry(entry.id);
+                router.push("/journal");
+              }}
+            >
+              <Trash2 className="h-5 w-5" />
+            </button>
+
+            <Link
+              href="/journal/new"
+              className={cn(liquidGlassButton, "h-10 w-10 text-foreground")}
+              aria-label="New entry"
+              title="New entry"
+            >
+              <Plus className="h-5 w-5" />
+            </Link>
+          </div>
         </header>
 
         <section className={cn(liquidGlassCard, "mt-6 p-6")}>
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs text-muted-foreground">
-                {formatDateTime(entry.createdAt)}
+            <div className="min-w-0">
+              <div className="inline-flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-primary" />
+                <p className="text-sm font-medium tracking-tight">{title}</p>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {formatDay(entry.createdAt)} · {formatTime(entry.createdAt)}
               </p>
-              {entry.mood ? (
-                <span className="mt-2 inline-flex rounded-full px-2 py-1 text-[11px] text-foreground/90 bg-white/10">
-                  {entry.mood}
-                </span>
-              ) : null}
             </div>
 
-            {/* Edit later */}
-            <Button variant="glass" disabled title="Edit (next step)">
-              Edit
+            <Button
+              variant="glass"
+              disabled
+              title="Premium (coming soon)"
+              className="shrink-0"
+            >
+              <Sparkles className="h-4 w-4" />
+              Reflect
             </Button>
           </div>
 
-          <div className="mt-5 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-            {entry.content}
+          <div className="mt-5 space-y-4">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+              {entry.content}
+            </p>
           </div>
         </section>
       </div>

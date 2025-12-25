@@ -8,40 +8,47 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Save, Sparkles, X } from "lucide-react";
 import type { Mood } from "@/lib/journal-store";
 
-const MOODS: Mood[] = ["Calm", "Anxious", "Grateful", "Heavy"];
-
-type Draft = {
-  title: string;
-  content: string;
-  mood: Mood | null;
-  updatedAt: number;
-};
-
 type Props = {
+  /** Back button destination */
   backHref: string;
-  headerTitle: string; // "New entry" | "Edit entry"
-  entryId?: string; // if edit mode, pass id for draft scoping
 
+  /** Page label */
+  headerLabel?: string;
+
+  /** Title shown in the header (e.g. "New entry" / "Edit entry") */
+  headerTitle: string;
+
+  /** If provided we treat this as edit mode for draft key scoping */
+  entryId?: string;
+
+  /** Initial values (for edit mode or prefilled prompts) */
   initialTitle?: string;
   initialContent?: string;
   initialMood?: Mood | null;
 
+  /** Optional prompt banner text */
   promptText?: string | null;
 
+  /** Save handler (create or update decided by page) */
   onSave: (data: {
     title: string;
     content: string;
     mood: Mood | null;
   }) => Promise<void> | void;
+
+  /** After successful save */
   onSaved?: () => void;
 };
 
-function hasText(content: string) {
-  return content.trim().length > 0;
+const MOODS: Mood[] = ["Calm", "Anxious", "Grateful", "Heavy"];
+
+function isMeaningfulContent(s: string) {
+  return s.replace(/\s+/g, " ").trim().length > 0;
 }
 
 export function JournalEditor({
   backHref,
+  headerLabel = "Journal",
   headerTitle,
   entryId,
   initialTitle = "",
@@ -66,21 +73,23 @@ export function JournalEditor({
   const [saving, setSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
-  // Load draft (if exists)
+  // Load draft (only if present; otherwise keep initial values)
   useEffect(() => {
     try {
       const raw = localStorage.getItem(draftKey);
       if (!raw) return;
 
-      const draft = JSON.parse(raw) as Partial<Draft>;
+      const draft = JSON.parse(raw) as Partial<{
+        title: string;
+        content: string;
+        mood: Mood | null;
+        updatedAt: number;
+      }>;
+
       if (typeof draft.title === "string") setTitle(draft.title);
       if (typeof draft.content === "string") setContent(draft.content);
-
-      if (draft.mood === null || typeof draft.mood === "string") {
-        setMood(draft.mood);
-      }
-
-      setLastSavedAt(draft.updatedAt ? new Date(draft.updatedAt) : null);
+      if (draft.mood === null || draft.mood) setMood(draft.mood);
+      if (draft.updatedAt) setLastSavedAt(new Date(draft.updatedAt));
     } catch {
       // ignore
     }
@@ -91,14 +100,14 @@ export function JournalEditor({
   useEffect(() => {
     const t = setTimeout(() => {
       try {
-        const draft: Draft = {
+        const payload = {
           title,
           content,
           mood,
           updatedAt: Date.now(),
         };
-        localStorage.setItem(draftKey, JSON.stringify(draft));
-        setLastSavedAt(new Date(draft.updatedAt));
+        localStorage.setItem(draftKey, JSON.stringify(payload));
+        setLastSavedAt(new Date(payload.updatedAt));
       } catch {
         // ignore
       }
@@ -116,7 +125,7 @@ export function JournalEditor({
   }
 
   async function handleSave() {
-    if (!hasText(content)) return;
+    if (!isMeaningfulContent(content)) return;
 
     setSaving(true);
     try {
@@ -142,7 +151,7 @@ export function JournalEditor({
         </Link>
 
         <div className="text-center">
-          <p className="text-xs text-muted-foreground">Journal</p>
+          <p className="text-xs text-muted-foreground">{headerLabel}</p>
           <h1 className="text-base font-medium tracking-tight">
             {headerTitle}
           </h1>
@@ -166,7 +175,7 @@ export function JournalEditor({
       </header>
 
       {/* Prompt */}
-      {promptText && (
+      {promptText ? (
         <section className={cn(liquidGlassCard, "mt-5 p-4")}>
           <div className="flex items-start gap-2">
             <Sparkles className="mt-0.5 h-4 w-4 text-primary" />
@@ -175,7 +184,7 @@ export function JournalEditor({
             </p>
           </div>
         </section>
-      )}
+      ) : null}
 
       {/* Editor */}
       <section className={cn(liquidGlassCard, "mt-5 p-5")}>
@@ -201,12 +210,13 @@ export function JournalEditor({
             placeholder="What’s on your mind?"
             className={cn(
               liquidGlassCard,
-              "mt-2 min-h-[260px] w-full resize-none p-3 text-base leading-relaxed outline-none",
+              "mt-2 min-h-[240px] w-full resize-none px-3 py-3 text-sm leading-relaxed outline-none",
               "placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
             )}
           />
+
           <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-            <span>{content.length} chars</span>
+            <span>{content.trim().length} chars</span>
             <span>
               {lastSavedAt
                 ? `Draft saved ${lastSavedAt.toLocaleTimeString("en-GB", {
@@ -255,7 +265,7 @@ export function JournalEditor({
           variant="glass"
           size="lg"
           onClick={handleSave}
-          disabled={saving || !hasText(content)}
+          disabled={saving || !isMeaningfulContent(content)}
           className="w-full sm:w-auto"
         >
           <Save className="h-4 w-4" />
