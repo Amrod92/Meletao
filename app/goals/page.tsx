@@ -47,6 +47,8 @@ export default function GoalsPage() {
 
   useEffect(() => {
     refresh();
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
   }, []);
 
   return (
@@ -102,10 +104,13 @@ export default function GoalsPage() {
               return (
                 <div key={g.id} className={cn(liquidGlassCard, "p-5")}>
                   <div className="flex items-start justify-between gap-3">
-                    {/* Make content clickable to open detail */}
+                    {/* Clickable content area */}
                     <Link
                       href={`/goals/${g.id}`}
-                      className="min-w-0 flex-1"
+                      className={cn(
+                        "min-w-0 flex-1 rounded-xl p-1 outline-none transition-all duration-300",
+                        "hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-ring"
+                      )}
                       aria-label={`Open goal ${g.title}`}
                     >
                       <p className="text-sm font-medium tracking-tight">
@@ -126,6 +131,7 @@ export default function GoalsPage() {
 
                     <div className="flex shrink-0 items-center gap-2">
                       <button
+                        type="button"
                         className={cn(
                           liquidGlassButton,
                           "h-10 w-10 text-foreground",
@@ -141,13 +147,17 @@ export default function GoalsPage() {
                       </button>
 
                       <button
+                        type="button"
                         className={cn(
                           liquidGlassButton,
                           "h-10 w-10 text-foreground"
                         )}
                         title="Delete"
                         onClick={() => {
-                          if (!confirm("Delete this goal?")) return;
+                          if (
+                            !confirm("Delete this goal? This can’t be undone.")
+                          )
+                            return;
                           deleteGoal(g.id);
                           refresh();
                         }}
@@ -171,7 +181,7 @@ export default function GoalsPage() {
                     </div>
                   </div>
 
-                  {/* Quick update (NOW WORKING) */}
+                  {/* Quick update */}
                   {canAdjust ? (
                     <div className="mt-4 grid grid-cols-2 gap-2">
                       <Button
