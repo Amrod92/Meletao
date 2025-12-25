@@ -1,4 +1,3 @@
-// app/goals/[id]/page.tsx
 "use client";
 
 import Link from "next/link";
@@ -53,16 +52,31 @@ function metricLine(goal: Goal) {
 export default function GoalDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+
   const [goal, setGoal] = useState<Goal | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    setGoal(getGoal(id));
+    const load = () => {
+      const found = getGoal(id);
+      setGoal(found);
+      setLoaded(true);
+    };
+
+    load();
+
+    window.addEventListener("focus", load);
+    return () => window.removeEventListener("focus", load);
   }, [id]);
 
   const pct = useMemo(() => (goal ? goalProgressPct(goal) : 0), [goal]);
+
   const canAdjust =
-    goal?.measurementEnabled &&
+    !!goal?.measurementEnabled &&
     (goal.measurementType === "numeric" || goal.measurementType === "checkbox");
+
+  // avoid flashing Not found
+  if (!loaded) return null;
 
   if (!goal) {
     return (
@@ -111,8 +125,8 @@ export default function GoalDetailPage() {
               )}
               title={goal.pinned ? "Pinned" : "Pin to Today"}
               onClick={() => {
-                const updated = pinGoal(goal.id);
-                setGoal(updated);
+                pinGoal(goal.id);
+                setGoal(getGoal(goal.id));
               }}
             >
               <Pin className="h-5 w-5" />
@@ -122,7 +136,7 @@ export default function GoalDetailPage() {
               className={cn(liquidGlassButton, "h-10 w-10 text-foreground")}
               title="Delete"
               onClick={() => {
-                if (!confirm("Delete this goal?")) return;
+                if (!confirm("Delete this goal? This can’t be undone.")) return;
                 deleteGoal(goal.id);
                 router.push("/goals");
               }}
@@ -188,12 +202,12 @@ export default function GoalDetailPage() {
               variant="glass"
               disabled={!canAdjust}
               onClick={() => {
-                if (!goal) return;
                 const updated =
                   goal.measurementType === "numeric"
                     ? incrementGoalNumeric(goal.id, -1)
                     : incrementGoalChecklist(goal.id, -1);
-                setGoal(updated ?? goal);
+
+                setGoal(updated ?? getGoal(goal.id));
               }}
             >
               <Minus className="h-4 w-4" />
@@ -204,12 +218,12 @@ export default function GoalDetailPage() {
               variant="glass"
               disabled={!canAdjust}
               onClick={() => {
-                if (!goal) return;
                 const updated =
                   goal.measurementType === "numeric"
                     ? incrementGoalNumeric(goal.id, +1)
                     : incrementGoalChecklist(goal.id, +1);
-                setGoal(updated ?? goal);
+
+                setGoal(updated ?? getGoal(goal.id));
               }}
             >
               <Plus className="h-4 w-4" />
@@ -218,8 +232,8 @@ export default function GoalDetailPage() {
           </div>
 
           <p className="mt-3 text-xs text-muted-foreground">
-            MVP controls: quick increments. Next we can add “set progress” and
-            edit.
+            MVP controls: quick increments. Next we can add “set progress”,
+            history, and edit goal.
           </p>
         </section>
       </div>
