@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { liquidGlassCard, liquidGlassButton } from "@/lib/liquid-glass";
 import { Button } from "@/components/ui/button";
 import { listEntries, type JournalEntry } from "@/lib/journal-store";
+import { getPinnedGoal, goalProgressPct } from "@/lib/goals-store";
 import {
   Plus,
   Sparkles,
@@ -62,15 +63,15 @@ export default function TodayPage() {
   const latestTitle = latest?.title ?? "Untitled";
   const latestSnippet = latest ? preview(latest.content) : null;
 
-  // Placeholder goal/gratitude (we’ll wire stores next)
-  const pinnedGoal = {
-    title: "Pick your first goal",
-    progressPct: 0,
-    metricLabel: "Progress",
-    current: 0,
-    target: 1,
-    href: "/goals",
-  };
+  const [pinnedGoal, setPinnedGoal] = useState<ReturnType<
+    typeof getPinnedGoal
+  > | null>(null);
+
+  useEffect(() => {
+    setPinnedGoal(getPinnedGoal());
+  }, []);
+
+  const pinnedPct = pinnedGoal ? goalProgressPct(pinnedGoal) : 0;
 
   const [gratitudeTodayCount, setGratitudeTodayCount] = useState(0);
 
@@ -226,32 +227,35 @@ export default function TodayPage() {
             </div>
 
             <div className="mt-3">
-              <p className="text-sm font-medium tracking-tight">
-                {pinnedGoal.title}
-              </p>
-
-              <div className="mt-3">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>
-                    {pinnedGoal.metricLabel}: {pinnedGoal.current}/
-                    {pinnedGoal.target}
-                  </span>
-                  <span>{pinnedGoal.progressPct}%</span>
-                </div>
-
-                <div className="mt-2 h-2 w-full rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-primary/70"
-                    style={{ width: `${pinnedGoal.progressPct}%` }}
-                  />
-                </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>
+                  {pinnedGoal?.measurementEnabled
+                    ? pinnedGoal.measurementType === "numeric"
+                      ? `${pinnedGoal.metricName ?? "Progress"}: ${
+                          pinnedGoal.current ?? 0
+                        }/${pinnedGoal.target ?? 0}`
+                      : `Checklist: ${pinnedGoal.checklistDone ?? 0}/${
+                          pinnedGoal.checklistTotal ?? 0
+                        }`
+                    : "No measurement"}
+                </span>
+                <span>{pinnedGoal ? pinnedPct : 0}%</span>
               </div>
 
-              <div className="mt-4">
-                <Button variant="glass" asChild className="w-full sm:w-auto">
-                  <Link href={pinnedGoal.href}>Set a goal</Link>
-                </Button>
+              <div className="mt-2 h-2 w-full rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-primary/70"
+                  style={{ width: `${pinnedGoal ? pinnedPct : 0}%` }}
+                />
               </div>
+            </div>
+
+            <div className="mt-4">
+              <Button variant="glass" asChild className="w-full sm:w-auto">
+                <Link href={pinnedGoal ? "/goals" : "/goals/new"}>
+                  {pinnedGoal ? "View goals" : "Set a goal"}
+                </Link>
+              </Button>
             </div>
           </section>
 
