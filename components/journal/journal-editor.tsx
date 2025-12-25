@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { liquidGlassCard, liquidGlassButton } from "@/lib/liquid-glass";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Save, Sparkles, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { createEntry } from "@/lib/journal-store";
 
 type Mood = "Calm" | "Anxious" | "Grateful" | "Heavy";
 const MOODS: Mood[] = ["Calm", "Anxious", "Grateful", "Heavy"];
@@ -26,6 +28,7 @@ function hasText(content: string) {
 }
 
 export function JournalEditor() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const promptFromUrl = searchParams.get("prompt");
 
@@ -93,14 +96,12 @@ export function JournalEditor() {
 
     setSaving(true);
     try {
-      // TODO: replace with a server action / API call that persists:
-      // { title, content, mood }
-      await new Promise((r) => setTimeout(r, 400));
+      const entry = createEntry({ title, content, mood });
 
       clearDraft();
       setLastSavedAt(new Date());
 
-      alert("Saved (placeholder). Next step: wire DB + redirect.");
+      router.push(`/journal/${entry.id}`);
     } finally {
       setSaving(false);
     }
