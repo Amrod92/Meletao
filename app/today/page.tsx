@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { liquidGlassCard, liquidGlassButton } from "@/lib/liquid-glass";
 import { Button } from "@/components/ui/button";
+import { listEntries, type JournalEntry } from "@/lib/journal-store";
 import {
   Plus,
   Sparkles,
@@ -11,16 +15,29 @@ import {
   HeartHandshake,
   ArrowRight,
 } from "lucide-react";
-import { getCurrentUser } from "@/lib/auth";
+import { countGratitudeToday } from "@/lib/gratitude-store";
 
-/**
- * MVP Today page (server component).
- * Wire real data later (DB/auth).
- */
-export default async function TodayPage() {
-  // --- Placeholder data (replace with DB later) ---
-  const user = await getCurrentUser();
-  const firstName = user?.firstName ?? "there";
+function formatTime(ts: number) {
+  return new Date(ts).toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatDate(ts: number) {
+  return new Date(ts).toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+  });
+}
+
+function preview(text: string, max = 160) {
+  const t = text.replace(/\s+/g, " ").trim();
+  return t.length > max ? t.slice(0, max) + "…" : t;
+}
+
+export default function TodayPage() {
   const today = new Date();
   const dateLabel = today.toLocaleDateString("en-GB", {
     weekday: "long",
@@ -30,30 +47,42 @@ export default async function TodayPage() {
 
   const dailyPrompt = "What would make today feel lighter — even by 1%?";
 
-  const lastEntry = {
-    title: "A calmer morning",
-    snippet:
-      "Woke up a bit tense, but the breathing helped. I noticed the urge to rush. Slowed down and it passed.",
-    href: "/journal/last", // TODO
-    createdAt: "Yesterday, 21:14",
-  };
+  const [latest, setLatest] = useState<JournalEntry | null>(null);
 
+  useEffect(() => {
+    const entries = listEntries();
+    setLatest(entries[0] ?? null);
+  }, []);
+
+  const latestHref = useMemo(() => {
+    if (!latest) return "/journal/new";
+    return `/journal/${latest.id}`;
+  }, [latest]);
+
+  const latestTitle = latest?.title ?? "Untitled";
+  const latestSnippet = latest ? preview(latest.content) : null;
+
+  // Placeholder goal/gratitude (we’ll wire stores next)
   const pinnedGoal = {
-    title: "Train boxing consistently",
-    progressPct: 42,
-    metricLabel: "Sessions",
-    current: 10,
-    target: 24,
-    href: "/goals/1", // TODO
+    title: "Pick your first goal",
+    progressPct: 0,
+    metricLabel: "Progress",
+    current: 0,
+    target: 1,
+    href: "/goals",
   };
 
-  const gratitudeTodayCount = 0;
+  const [gratitudeTodayCount, setGratitudeTodayCount] = useState(0);
+
+  useEffect(() => {
+    setGratitudeTodayCount(countGratitudeToday());
+  }, []);
 
   const moodChips = ["Calm", "Anxious", "Grateful", "Heavy"] as const;
 
   return (
     <main className="relative min-h-screen overflow-hidden">
-      {/* Background glow (quiet) */}
+      {/* Background glow */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-background" />
         <div className="absolute -top-24 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" />
@@ -66,9 +95,7 @@ export default async function TodayPage() {
         <header className="flex items-center justify-between">
           <div>
             <p className="text-sm text-muted-foreground">{dateLabel}</p>
-            <h1 className="text-2xl font-medium tracking-tight">
-              Today, {firstName}
-            </h1>
+            <h1 className="text-2xl font-medium tracking-tight">Today</h1>
           </div>
 
           <Link
@@ -81,7 +108,7 @@ export default async function TodayPage() {
         </header>
 
         <div className="mt-6 space-y-4">
-          {/* Arrive card */}
+          {/* Arrive */}
           <section className={cn(liquidGlassCard, "p-5")}>
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-2">
@@ -102,7 +129,6 @@ export default async function TodayPage() {
               </Button>
             </div>
 
-            {/* Mood chips (optional, MVP-simple) */}
             <div className="mt-4 flex flex-wrap gap-2">
               {moodChips.map((m) => (
                 <button
@@ -119,7 +145,7 @@ export default async function TodayPage() {
             </div>
           </section>
 
-          {/* Continue last entry */}
+          {/* Continue */}
           <section className={cn(liquidGlassCard, "p-5")}>
             <div className="flex items-center justify-between gap-3">
               <div className="inline-flex items-center gap-2">
@@ -128,44 +154,60 @@ export default async function TodayPage() {
               </div>
 
               <Link
-                href={lastEntry.href}
+                href="/journal"
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
-                Open journal <ArrowRight className="inline h-3.5 w-3.5" />
+                All entries <ArrowRight className="inline h-3.5 w-3.5" />
               </Link>
             </div>
 
-            <div className="mt-3">
-              <p className="text-sm font-medium tracking-tight">
-                {lastEntry.title}
-              </p>
-              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                {lastEntry.snippet}
-              </p>
-              <p className="mt-3 text-xs text-muted-foreground">
-                {lastEntry.createdAt}
-              </p>
+            {latest ? (
+              <div className="mt-3">
+                <p className="text-sm font-medium tracking-tight">
+                  {latestTitle}
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                  {latestSnippet}
+                </p>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  {formatDate(latest.createdAt)} ·{" "}
+                  {formatTime(latest.createdAt)}
+                </p>
 
-              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                <Button variant="glass" asChild className="w-full sm:w-auto">
-                  <Link href={lastEntry.href}>Continue writing</Link>
-                </Button>
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                  <Button variant="glass" asChild className="w-full sm:w-auto">
+                    <Link href={latestHref}>Continue</Link>
+                  </Button>
 
-                {/* Premium-only later: show only if premium */}
-                <Button
-                  variant="glass"
-                  className="w-full sm:w-auto"
-                  disabled
-                  title="Premium feature (coming soon)"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  Reflect with AI
-                </Button>
+                  <Button
+                    variant="glass"
+                    className="w-full sm:w-auto"
+                    disabled
+                    title="Premium feature (coming soon)"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Reflect with AI
+                  </Button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="mt-3">
+                <p className="text-sm text-muted-foreground">
+                  No entries yet. Start with one honest paragraph.
+                </p>
+                <div className="mt-4">
+                  <Button variant="glass" asChild>
+                    <Link href="/journal/new">
+                      <Plus className="h-4 w-4" />
+                      Write first entry
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            )}
           </section>
 
-          {/* Focus goal */}
+          {/* Focus goal (placeholder) */}
           <section className={cn(liquidGlassCard, "p-5")}>
             <div className="flex items-center justify-between gap-3">
               <div className="inline-flex items-center gap-2">
@@ -179,7 +221,7 @@ export default async function TodayPage() {
                 href="/goals"
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
-                All goals <ArrowRight className="inline h-3.5 w-3.5" />
+                Goals <ArrowRight className="inline h-3.5 w-3.5" />
               </Link>
             </div>
 
@@ -205,23 +247,15 @@ export default async function TodayPage() {
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <div className="mt-4">
                 <Button variant="glass" asChild className="w-full sm:w-auto">
-                  <Link href={pinnedGoal.href}>View goal</Link>
-                </Button>
-                <Button
-                  variant="glass"
-                  className="w-full sm:w-auto"
-                  disabled
-                  title="Hook up your goal update flow"
-                >
-                  Update progress
+                  <Link href={pinnedGoal.href}>Set a goal</Link>
                 </Button>
               </div>
             </div>
           </section>
 
-          {/* Gratitude nudge */}
+          {/* Gratitude (placeholder) */}
           <section className={cn(liquidGlassCard, "p-5")}>
             <div className="flex items-center justify-between gap-3">
               <div className="inline-flex items-center gap-2">
@@ -240,27 +274,6 @@ export default async function TodayPage() {
             <div className="mt-4">
               <Button variant="glass" asChild className="w-full sm:w-auto">
                 <Link href="/gratitude/new">Add gratitude</Link>
-              </Button>
-            </div>
-          </section>
-
-          {/* One small reflection */}
-          <section className={cn(liquidGlassCard, "p-5")}>
-            <p className="text-sm font-medium tracking-tight">
-              One small reflection
-            </p>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              What are you avoiding today — and what would happen if you didn’t?
-            </p>
-
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-              <Button variant="glass" asChild className="w-full sm:w-auto">
-                <Link href="/journal/new?prompt=avoidance">
-                  Write about this
-                </Link>
-              </Button>
-              <Button variant="ghost" asChild className="w-full sm:w-auto">
-                <Link href="/journal">View entries</Link>
               </Button>
             </div>
           </section>
