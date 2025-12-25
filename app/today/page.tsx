@@ -6,7 +6,12 @@ import { cn } from "@/lib/utils";
 import { liquidGlassCard, liquidGlassButton } from "@/lib/liquid-glass";
 import { Button } from "@/components/ui/button";
 import { listEntries, type JournalEntry } from "@/lib/journal-store";
-import { getPinnedGoal, goalProgressPct } from "@/lib/goals-store";
+import {
+  getPinnedGoal,
+  goalProgressPct,
+  incrementGoalNumeric,
+  incrementGoalChecklist,
+} from "@/lib/goals-store";
 import {
   Plus,
   Sparkles,
@@ -49,10 +54,22 @@ export default function TodayPage() {
   const dailyPrompt = "What would make today feel lighter — even by 1%?";
 
   const [latest, setLatest] = useState<JournalEntry | null>(null);
+  const [pinnedGoal, setPinnedGoal] = useState<ReturnType<
+    typeof getPinnedGoal
+  > | null>(null);
+  const [gratitudeTodayCount, setGratitudeTodayCount] = useState(0);
 
+  // One refresh for the whole Today page state (simple + reliable)
   useEffect(() => {
-    const entries = listEntries();
-    setLatest(entries[0] ?? null);
+    const refresh = () => {
+      const entries = listEntries();
+      setLatest(entries[0] ?? null);
+
+      setPinnedGoal(getPinnedGoal());
+      setGratitudeTodayCount(countGratitudeToday());
+    };
+
+    refresh();
   }, []);
 
   const latestHref = useMemo(() => {
@@ -63,21 +80,21 @@ export default function TodayPage() {
   const latestTitle = latest?.title ?? "Untitled";
   const latestSnippet = latest ? preview(latest.content) : null;
 
-  const [pinnedGoal, setPinnedGoal] = useState<ReturnType<
-    typeof getPinnedGoal
-  > | null>(null);
-
-  useEffect(() => {
-    setPinnedGoal(getPinnedGoal());
-  }, []);
-
   const pinnedPct = pinnedGoal ? goalProgressPct(pinnedGoal) : 0;
 
-  const [gratitudeTodayCount, setGratitudeTodayCount] = useState(0);
+  const focusMetricLine = useMemo(() => {
+    if (!pinnedGoal) return "No goal pinned";
+    if (!pinnedGoal.measurementEnabled) return "No measurement";
 
-  useEffect(() => {
-    setGratitudeTodayCount(countGratitudeToday());
-  }, []);
+    if (pinnedGoal.measurementType === "numeric") {
+      const name = pinnedGoal.metricName ?? "Progress";
+      return `${name}: ${pinnedGoal.current ?? 0}/${pinnedGoal.target ?? 0}`;
+    }
+
+    return `Checklist: ${pinnedGoal.checklistDone ?? 0}/${
+      pinnedGoal.checklistTotal ?? 0
+    }`;
+  }, [pinnedGoal]);
 
   const moodChips = ["Calm", "Anxious", "Grateful", "Heavy"] as const;
 
@@ -208,7 +225,7 @@ export default function TodayPage() {
             )}
           </section>
 
-          {/* Focus goal (placeholder) */}
+          {/* Focus goal */}
           <section className={cn(liquidGlassCard, "p-5")}>
             <div className="flex items-center justify-between gap-3">
               <div className="inline-flex items-center gap-2">
@@ -227,39 +244,73 @@ export default function TodayPage() {
             </div>
 
             <div className="mt-3">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>
-                  {pinnedGoal?.measurementEnabled
-                    ? pinnedGoal.measurementType === "numeric"
-                      ? `${pinnedGoal.metricName ?? "Progress"}: ${
-                          pinnedGoal.current ?? 0
-                        }/${pinnedGoal.target ?? 0}`
-                      : `Checklist: ${pinnedGoal.checklistDone ?? 0}/${
-                          pinnedGoal.checklistTotal ?? 0
-                        }`
-                    : "No measurement"}
-                </span>
-                <span>{pinnedGoal ? pinnedPct : 0}%</span>
+              {/* ✅ Added: show goal title */}
+              <p className="text-sm font-medium tracking-tight">
+                {pinnedGoal ? pinnedGoal.title : "Pick your first goal"}
+              </p>
+
+              <div className="mt-3">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  {/* ✅ Fixed: sensible label when no pinned goal */}
+                  <span>{focusMetricLine}</span>
+                  <span>{pinnedGoal ? pinnedPct : 0}%</span>
+                </div>
+
+                <div className="mt-2 h-2 w-full rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-primary/70"
+                    style={{ width: `${pinnedGoal ? pinnedPct : 0}%` }}
+                  />
+                </div>
               </div>
 
-              <div className="mt-2 h-2 w-full rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-primary/70"
-                  style={{ width: `${pinnedGoal ? pinnedPct : 0}%` }}
-                />
-              </div>
-            </div>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Button variant="glass" asChild className="w-full sm:w-auto">
+                  <Link
+                    href={pinnedGoal ? `/goals/${pinnedGoal.id}` : "/goals/new"}
+                  >
+                    {pinnedGoal ? "Open goal" : "Set a goal"}
+                  </Link>
+                </Button>
 
-            <div className="mt-4">
-              <Button variant="glass" asChild className="w-full sm:w-auto">
-                <Link href={pinnedGoal ? "/goals" : "/goals/new"}>
-                  {pinnedGoal ? "View goals" : "Set a goal"}
-                </Link>
-              </Button>
+                {pinnedGoal?.measurementEnabled ? (
+                  <div className="grid w-full grid-cols-2 gap-2 sm:w-auto">
+                    <Button
+                      variant="glass"
+                      disabled={!pinnedGoal}
+                      onClick={() => {
+                        if (!pinnedGoal) return;
+                        const updated =
+                          pinnedGoal.measurementType === "numeric"
+                            ? incrementGoalNumeric(pinnedGoal.id, -1)
+                            : incrementGoalChecklist(pinnedGoal.id, -1);
+                        setPinnedGoal(updated ?? pinnedGoal);
+                      }}
+                    >
+                      -1
+                    </Button>
+
+                    <Button
+                      variant="glass"
+                      disabled={!pinnedGoal}
+                      onClick={() => {
+                        if (!pinnedGoal) return;
+                        const updated =
+                          pinnedGoal.measurementType === "numeric"
+                            ? incrementGoalNumeric(pinnedGoal.id, +1)
+                            : incrementGoalChecklist(pinnedGoal.id, +1);
+                        setPinnedGoal(updated ?? pinnedGoal);
+                      }}
+                    >
+                      +1
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </section>
 
-          {/* Gratitude (placeholder) */}
+          {/* Gratitude */}
           <section className={cn(liquidGlassCard, "p-5")}>
             <div className="flex items-center justify-between gap-3">
               <div className="inline-flex items-center gap-2">

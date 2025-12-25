@@ -13,7 +13,7 @@ type NavItem = {
 };
 
 const NAV: NavItem[] = [
-  { label: "Today", href: "/", icon: Sun },
+  { label: "Today", href: "/today", icon: Sun },
   { label: "Journal", href: "/journal", icon: BookOpen },
   { label: "Goals", href: "/goals", icon: Target },
   { label: "Gratitude", href: "/gratitude", icon: HeartHandshake },
@@ -30,7 +30,7 @@ export function BottomNavbar() {
             {NAV.map((item) => {
               const active =
                 pathname === item.href ||
-                (item.href !== "/" && pathname.startsWith(item.href));
+                (item.href !== "/today" && pathname.startsWith(item.href));
 
               const Icon = item.icon;
 
@@ -38,6 +38,7 @@ export function BottomNavbar() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
                     "relative flex w-full flex-col items-center justify-center gap-1 rounded-xl py-2 text-xs transition-all duration-300",
                     active
@@ -48,14 +49,13 @@ export function BottomNavbar() {
                   <Icon
                     className={cn(
                       "h-5 w-5 transition-colors",
-                      active ? "text-primary" : "text-muted-foreground"
+                      active ? "text-primary" : "text-current"
                     )}
                   />
                   <span className={cn(active && "font-medium")}>
                     {item.label}
                   </span>
 
-                  {/* active indicator (quiet, olive) */}
                   {active && (
                     <span className="absolute -bottom-1 h-1 w-10 rounded-full bg-primary/60" />
                   )}

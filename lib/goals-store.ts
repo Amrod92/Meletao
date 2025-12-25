@@ -209,3 +209,25 @@ export function goalProgressPct(goal: Goal): number {
   if (!total || total <= 0) return 0;
   return Math.max(0, Math.min(100, Math.round((done / total) * 100)));
 }
+
+export function incrementGoalNumeric(id: string, delta: number): Goal | null {
+  const goal = getGoal(id);
+  if (!goal) return null;
+  if (!goal.measurementEnabled || goal.measurementType !== "numeric") return goal;
+
+  const cur = Number(goal.current ?? 0);
+  const next = cur + delta;
+
+  return updateGoalProgress(id, { current: next });
+}
+
+export function incrementGoalChecklist(id: string, delta: number): Goal | null {
+  const goal = getGoal(id);
+  if (!goal) return null;
+  if (!goal.measurementEnabled || goal.measurementType !== "checkbox") return goal;
+
+  const done = Number(goal.checklistDone ?? 0);
+  const next = done + delta;
+
+  return updateGoalProgress(id, { checklistDone: next });
+}

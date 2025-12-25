@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { liquidGlassCard, liquidGlassButton } from "@/lib/liquid-glass";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,8 @@ import {
   pinGoal,
   deleteGoal,
   goalProgressPct,
+  incrementGoalNumeric,
+  incrementGoalChecklist,
   type Goal,
 } from "@/lib/goals-store";
 import { ArrowLeft, Plus, Target, Pin, Trash2 } from "lucide-react";
@@ -38,16 +39,15 @@ function metricLabel(goal: Goal) {
 }
 
 export default function GoalsPage() {
-  const router = useRouter();
   const [goals, setGoals] = useState<Goal[]>([]);
-
-  useEffect(() => {
-    setGoals(listGoals());
-  }, []);
 
   function refresh() {
     setGoals(listGoals());
   }
+
+  useEffect(() => {
+    refresh();
+  }, []);
 
   return (
     <main className="relative min-h-screen overflow-hidden">
@@ -94,24 +94,35 @@ export default function GoalsPage() {
           <section className="mt-6 space-y-3">
             {goals.map((g) => {
               const pct = goalProgressPct(g);
+              const canAdjust =
+                g.measurementEnabled &&
+                (g.measurementType === "numeric" ||
+                  g.measurementType === "checkbox");
+
               return (
                 <div key={g.id} className={cn(liquidGlassCard, "p-5")}>
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+                    {/* Make content clickable to open detail */}
+                    <Link
+                      href={`/goals/${g.id}`}
+                      className="min-w-0 flex-1"
+                      aria-label={`Open goal ${g.title}`}
+                    >
                       <p className="text-sm font-medium tracking-tight">
                         {g.title}
                       </p>
+
                       {g.description ? (
                         <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
                           {g.description}
                         </p>
                       ) : null}
 
-                      <div className="mt-3 text-xs text-muted-foreground space-y-1">
+                      <div className="mt-3 space-y-1 text-xs text-muted-foreground">
                         <p>{formatGoalWindow(g)}</p>
                         <p>{metricLabel(g)}</p>
                       </div>
-                    </div>
+                    </Link>
 
                     <div className="flex shrink-0 items-center gap-2">
                       <button
@@ -160,27 +171,30 @@ export default function GoalsPage() {
                     </div>
                   </div>
 
-                  {/* Quick update */}
-                  {g.measurementEnabled && g.measurementType === "numeric" ? (
-                    <div className="mt-4 flex gap-2">
+                  {/* Quick update (NOW WORKING) */}
+                  {canAdjust ? (
+                    <div className="mt-4 grid grid-cols-2 gap-2">
                       <Button
                         variant="glass"
-                        className="flex-1"
                         onClick={() => {
-                          // For now, just navigate later when we build goal detail/edit.
-                          router.push("/goals"); // placeholder
+                          const updated =
+                            g.measurementType === "numeric"
+                              ? incrementGoalNumeric(g.id, -1)
+                              : incrementGoalChecklist(g.id, -1);
+                          if (updated) refresh();
                         }}
-                        disabled
-                        title="Next step: quick increment controls"
                       >
                         -1
                       </Button>
                       <Button
                         variant="glass"
-                        className="flex-1"
-                        onClick={() => {}}
-                        disabled
-                        title="Next step: quick increment controls"
+                        onClick={() => {
+                          const updated =
+                            g.measurementType === "numeric"
+                              ? incrementGoalNumeric(g.id, +1)
+                              : incrementGoalChecklist(g.id, +1);
+                          if (updated) refresh();
+                        }}
                       >
                         +1
                       </Button>
