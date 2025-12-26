@@ -231,3 +231,87 @@ export function incrementGoalChecklist(id: string, delta: number): Goal | null {
 
   return updateGoalProgress(id, { checklistDone: next });
 }
+
+export function updateGoal(
+  id: string,
+  patch: Partial<
+    Pick<
+      Goal,
+      | "title"
+      | "description"
+      | "type"
+      | "year"
+      | "startDate"
+      | "endDate"
+      | "measurementEnabled"
+      | "measurementType"
+      | "metricName"
+      | "current"
+      | "target"
+      | "checklistDone"
+      | "checklistTotal"
+    >
+  >
+): Goal | null {
+  const goals = loadAll();
+  const idx = goals.findIndex((g) => g.id === id);
+  if (idx === -1) return null;
+
+  const prev = goals[idx];
+
+  const updated: Goal = {
+    ...prev,
+    ...patch,
+    title:
+      typeof patch.title === "string"
+        ? patch.title.trim() || prev.title
+        : prev.title,
+    description:
+      typeof patch.description === "string"
+        ? patch.description.trim() || undefined
+        : prev.description,
+    updatedAt: Date.now(),
+  };
+
+  // Enforce type invariants
+  if (updated.type === "yearly") {
+    updated.year = typeof updated.year === "number" ? updated.year : prev.year;
+    updated.startDate = undefined;
+    updated.endDate = undefined;
+  } else {
+    // dated
+    updated.year = undefined;
+    // keep start/end as provided (or existing)
+  }
+
+  // If measurement disabled, keep it consistent
+  if (!updated.measurementEnabled) {
+    // keep measurementType default stable, but clear measurement fields
+    updated.metricName = undefined;
+    updated.current = 0;
+    updated.target = undefined;
+    updated.checklistDone = 0;
+    updated.checklistTotal = undefined;
+  }
+
+  // Clamp numeric
+  if (updated.measurementEnabled && updated.measurementType === "numeric") {
+    const cur = Math.max(0, Number(updated.current ?? 0));
+    const tgt = Math.max(0, Number(updated.target ?? 0));
+    updated.current = tgt > 0 ? Math.min(cur, tgt) : cur;
+    updated.target = tgt || undefined; // keep undefined if 0
+  }
+
+  // Clamp checklist
+  if (updated.measurementEnabled && updated.measurementType === "checkbox") {
+    const total = Math.max(0, Number(updated.checklistTotal ?? 0));
+    const done = Math.max(0, Number(updated.checklistDone ?? 0));
+    updated.checklistTotal = total || undefined;
+    updated.checklistDone = total > 0 ? Math.min(done, total) : done;
+  }
+
+  goals[idx] = updated;
+  saveAll(goals);
+  return updated;
+}
+

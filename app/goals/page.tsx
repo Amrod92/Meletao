@@ -14,7 +14,7 @@ import {
   incrementGoalChecklist,
   type Goal,
 } from "@/lib/goals-store";
-import { ArrowLeft, Plus, Target, Pin, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Target, Pin, Trash2, Sparkles } from "lucide-react";
 
 function formatGoalWindow(goal: Goal) {
   if (goal.type === "yearly" && goal.year) return `Year ${goal.year}`;
@@ -101,21 +101,52 @@ export default function GoalsPage() {
                 (g.measurementType === "numeric" ||
                   g.measurementType === "checkbox");
 
+              const isActive = !!g.pinned;
+
               return (
-                <div key={g.id} className={cn(liquidGlassCard, "p-5")}>
+                <div
+                  key={g.id}
+                  className={cn(
+                    liquidGlassCard,
+                    "p-5 transition-all duration-300",
+                    // ✅ Active/pinned styling (subtle but obvious)
+                    isActive &&
+                      "ring-1 ring-primary/50 shadow-[inset_0_1px_0px_rgba(255,255,255,0.75),0_0_0_1px_rgba(0,0,0,0.04),0_8px_30px_rgba(0,0,0,0.18)]"
+                  )}
+                >
                   <div className="flex items-start justify-between gap-3">
                     {/* Clickable content area */}
                     <Link
                       href={`/goals/${g.id}`}
                       className={cn(
                         "min-w-0 flex-1 rounded-xl p-1 outline-none transition-all duration-300",
-                        "hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-ring"
+                        "hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-ring",
+                        isActive && "hover:bg-white/15"
                       )}
                       aria-label={`Open goal ${g.title}`}
                     >
-                      <p className="text-sm font-medium tracking-tight">
-                        {g.title}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium tracking-tight">
+                          {g.title}
+                        </p>
+
+                        {/* ✅ Active pill */}
+                        {isActive && (
+                          <span
+                            className={cn(
+                              liquidGlassButton,
+                              "h-6 px-2 text-[11px] leading-none",
+                              "inline-flex items-center gap-1",
+                              "text-foreground"
+                            )}
+                            aria-label="Pinned to Today"
+                            title="Pinned to Today"
+                          >
+                            <Sparkles className="h-3.5 w-3.5 text-primary" />
+                            Active
+                          </span>
+                        )}
+                      </div>
 
                       {g.description ? (
                         <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
@@ -130,29 +161,43 @@ export default function GoalsPage() {
                     </Link>
 
                     <div className="flex shrink-0 items-center gap-2">
+                      {/* ✅ Pin button also shows state clearly */}
                       <button
                         type="button"
                         className={cn(
                           liquidGlassButton,
-                          "h-10 w-10 text-foreground",
-                          g.pinned && "bg-white/30"
+                          "h-10 w-10 text-foreground transition-all duration-300",
+                          isActive
+                            ? "bg-white/30 ring-1 ring-primary/40"
+                            : "hover:bg-white/20"
                         )}
-                        title={g.pinned ? "Pinned" : "Pin to Today"}
+                        title={
+                          isActive ? "Pinned (Active on Today)" : "Pin to Today"
+                        }
+                        aria-label={
+                          isActive ? "Pinned to Today" : "Pin to Today"
+                        }
                         onClick={() => {
                           pinGoal(g.id);
                           refresh();
                         }}
                       >
-                        <Pin className="h-5 w-5" />
+                        <Pin
+                          className={cn(
+                            "h-5 w-5",
+                            isActive ? "text-primary" : "text-foreground"
+                          )}
+                        />
                       </button>
 
                       <button
                         type="button"
                         className={cn(
                           liquidGlassButton,
-                          "h-10 w-10 text-foreground"
+                          "h-10 w-10 text-foreground hover:bg-white/20"
                         )}
                         title="Delete"
+                        aria-label="Delete goal"
                         onClick={() => {
                           if (
                             !confirm("Delete this goal? This can’t be undone.")
@@ -173,7 +218,13 @@ export default function GoalsPage() {
                       <span>Progress</span>
                       <span>{pct}%</span>
                     </div>
-                    <div className="mt-2 h-2 w-full rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                    <div
+                      className={cn(
+                        "mt-2 h-2 w-full rounded-full overflow-hidden",
+                        "bg-black/10 dark:bg-white/10",
+                        isActive && "ring-1 ring-primary/20"
+                      )}
+                    >
                       <div
                         className="h-full rounded-full bg-primary/70"
                         style={{ width: `${pct}%` }}

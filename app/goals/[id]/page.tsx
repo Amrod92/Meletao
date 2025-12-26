@@ -23,6 +23,7 @@ import {
   Minus,
   Plus,
   ArrowRight,
+  Pencil,
 } from "lucide-react";
 
 function formatWindow(goal: Goal) {
@@ -58,13 +59,11 @@ export default function GoalDetailPage() {
 
   useEffect(() => {
     const load = () => {
-      const found = getGoal(id);
-      setGoal(found);
+      setGoal(getGoal(id));
       setLoaded(true);
     };
 
     load();
-
     window.addEventListener("focus", load);
     return () => window.removeEventListener("focus", load);
   }, [id]);
@@ -75,7 +74,7 @@ export default function GoalDetailPage() {
     !!goal?.measurementEnabled &&
     (goal.measurementType === "numeric" || goal.measurementType === "checkbox");
 
-  // avoid flashing Not found
+  // Avoid flashing Not found before we load.
   if (!loaded) return null;
 
   if (!goal) {
@@ -109,14 +108,25 @@ export default function GoalDetailPage() {
             <ArrowLeft className="h-5 w-5" />
           </Link>
 
-          <div className="text-center">
+          <div className="text-center min-w-0 px-2">
             <p className="text-xs text-muted-foreground">Goal</p>
-            <h1 className="text-base font-medium tracking-tight">
+            <h1 className="truncate text-base font-medium tracking-tight">
               {goal.title}
             </h1>
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Edit */}
+            <Link
+              href={`/goals/${goal.id}/edit`}
+              className={cn(liquidGlassButton, "h-10 w-10 text-foreground")}
+              aria-label="Edit goal"
+              title="Edit goal"
+            >
+              <Pencil className="h-5 w-5" />
+            </Link>
+
+            {/* Pin */}
             <button
               className={cn(
                 liquidGlassButton,
@@ -124,17 +134,20 @@ export default function GoalDetailPage() {
                 goal.pinned && "bg-white/30"
               )}
               title={goal.pinned ? "Pinned" : "Pin to Today"}
+              aria-label={goal.pinned ? "Pinned" : "Pin to Today"}
               onClick={() => {
-                pinGoal(goal.id);
-                setGoal(getGoal(goal.id));
+                const updated = pinGoal(goal.id);
+                if (updated) setGoal(updated);
               }}
             >
               <Pin className="h-5 w-5" />
             </button>
 
+            {/* Delete */}
             <button
               className={cn(liquidGlassButton, "h-10 w-10 text-foreground")}
               title="Delete"
+              aria-label="Delete goal"
               onClick={() => {
                 if (!confirm("Delete this goal? This can’t be undone.")) return;
                 deleteGoal(goal.id);
@@ -202,12 +215,15 @@ export default function GoalDetailPage() {
               variant="glass"
               disabled={!canAdjust}
               onClick={() => {
-                const updated =
-                  goal.measurementType === "numeric"
-                    ? incrementGoalNumeric(goal.id, -1)
-                    : incrementGoalChecklist(goal.id, -1);
+                const g = goal;
+                if (!g) return;
 
-                setGoal(updated ?? getGoal(goal.id));
+                const updated =
+                  g.measurementType === "numeric"
+                    ? incrementGoalNumeric(g.id, -1)
+                    : incrementGoalChecklist(g.id, -1);
+
+                if (updated) setGoal(updated);
               }}
             >
               <Minus className="h-4 w-4" />
@@ -218,12 +234,15 @@ export default function GoalDetailPage() {
               variant="glass"
               disabled={!canAdjust}
               onClick={() => {
-                const updated =
-                  goal.measurementType === "numeric"
-                    ? incrementGoalNumeric(goal.id, +1)
-                    : incrementGoalChecklist(goal.id, +1);
+                const g = goal;
+                if (!g) return;
 
-                setGoal(updated ?? getGoal(goal.id));
+                const updated =
+                  g.measurementType === "numeric"
+                    ? incrementGoalNumeric(g.id, +1)
+                    : incrementGoalChecklist(g.id, +1);
+
+                if (updated) setGoal(updated);
               }}
             >
               <Plus className="h-4 w-4" />
@@ -232,8 +251,8 @@ export default function GoalDetailPage() {
           </div>
 
           <p className="mt-3 text-xs text-muted-foreground">
-            MVP controls: quick increments. Next we can add “set progress”,
-            history, and edit goal.
+            MVP controls: quick increments. Next we can add “set progress” and
+            history/streaks.
           </p>
         </section>
       </div>
