@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getEntry, updateEntry, type JournalEntry } from "@/lib/journal-store";
 import { JournalEditor } from "@/components/journal/journal-editor";
@@ -11,22 +11,14 @@ export default function JournalEditPage() {
 
   const backHref = useMemo(() => `/journal/${id}`, [id]);
 
-  const [entry, setEntry] = useState<JournalEntry | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const entry = useMemo<JournalEntry | null>(() => getEntry(id), [id]);
 
   useEffect(() => {
-    const found = getEntry(id);
-    setEntry(found);
-    setLoaded(true);
-
     // If entry doesn't exist, redirect after load
-    if (!found) {
+    if (!entry) {
       router.push(backHref);
     }
-  }, [id, backHref, router]);
-
-  // Avoid redirecting on first render before we’ve loaded
-  if (!loaded) return null;
+  }, [backHref, entry, router]);
 
   // If not found, effect will redirect
   if (!entry) return null;

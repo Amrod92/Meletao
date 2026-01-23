@@ -4,6 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { liquidGlassNav } from "@/lib/liquid-glass";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+} from "@/components/ui/navigation-menu";
 import { BookOpen, HeartHandshake, Target, Sun } from "lucide-react";
 
 type NavItem = {
@@ -25,8 +31,8 @@ export function BottomNavbar() {
   return (
     <nav aria-label="Primary" className="fixed inset-x-0 bottom-3 z-50">
       <div className="mx-auto max-w-md px-4">
-        <div className={cn(liquidGlassNav, "px-2")}>
-          <div className="relative flex h-16 items-center justify-between">
+        <NavigationMenu className={cn(liquidGlassNav, "px-2")}>
+          <NavigationMenuList className="relative flex h-16 items-center justify-between">
             {NAV.map((item) => {
               const active =
                 pathname === item.href ||
@@ -35,35 +41,38 @@ export function BottomNavbar() {
               const Icon = item.icon;
 
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "relative flex w-full flex-col items-center justify-center gap-1 rounded-xl py-2 text-xs transition-all duration-300",
-                    active
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <Icon
-                    className={cn(
-                      "h-5 w-5 transition-colors",
-                      active ? "text-primary" : "text-current"
-                    )}
-                  />
-                  <span className={cn(active && "font-medium")}>
-                    {item.label}
-                  </span>
+                <NavigationMenuItem key={item.href} className="w-full">
+                  <NavigationMenuLink asChild>
+                    <Link
+                      href={item.href}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "relative flex w-full flex-col items-center justify-center gap-1 rounded-xl py-2 text-xs transition-all duration-300",
+                        active
+                          ? "text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <Icon
+                        className={cn(
+                          "h-5 w-5 transition-colors",
+                          active ? "text-primary" : "text-current"
+                        )}
+                      />
+                      <span className={cn(active && "font-medium")}>
+                        {item.label}
+                      </span>
 
-                  {active && (
-                    <span className="absolute -bottom-1 h-1 w-10 rounded-full bg-primary/60" />
-                  )}
-                </Link>
+                      {active && (
+                        <span className="absolute -bottom-1 h-1 w-10 rounded-full bg-primary/60" />
+                      )}
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
               );
             })}
-          </div>
-        </div>
+          </NavigationMenuList>
+        </NavigationMenu>
       </div>
     </nav>
   );

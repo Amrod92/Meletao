@@ -3,9 +3,9 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { liquidGlassCard } from "@/lib/liquid-glass";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { isLoggedIn } from "@/lib/auth";
-import { cn } from "@/lib/utils";
 import { Check, Lock, Sparkles, Target, HeartHandshake } from "lucide-react";
 
 export default async function LandingPage() {
@@ -27,17 +27,12 @@ export default async function LandingPage() {
         {/* Above the fold */}
         <div className="grid items-center gap-10 md:grid-cols-2">
           <div className="space-y-6">
-            <div
-              className={cn(
-                liquidGlassCard,
-                "inline-flex items-center gap-2 px-3 py-1.5 rounded-full"
-              )}
-            >
+            <Card className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full">
               <Sparkles className="h-4 w-4 text-primary" />
               <p className="text-sm text-foreground/90">
                 meletaó — practice reflection, not performance.
               </p>
-            </div>
+            </Card>
 
             <h1 className="text-4xl font-medium tracking-tight md:text-5xl leading-tight">
               A quiet space to journal, set intentions, and make sense of your
@@ -66,7 +61,7 @@ export default async function LandingPage() {
             </div>
 
             {/* Benefits bullets */}
-            <div className={cn(liquidGlassCard, "p-4")}>
+            <Card className="p-4">
               <p className="text-sm font-medium tracking-tight">What you get</p>
               <ul className="mt-3 space-y-2 text-sm text-foreground/90">
                 <li className="flex gap-2">
@@ -95,12 +90,12 @@ export default async function LandingPage() {
                   </span>
                 </li>
               </ul>
-            </div>
+            </Card>
           </div>
 
           {/* Hero visual (product in action) */}
           <div className="space-y-4">
-            <div className={cn(liquidGlassCard, "p-3")}>
+            <Card className="p-3">
               <div className="relative overflow-hidden rounded-2xl">
                 {/* Replace with your own screenshot/video later */}
                 <Image
@@ -115,47 +110,47 @@ export default async function LandingPage() {
               </div>
 
               {/* Small glass caption strip */}
-              <div className={cn(liquidGlassCard, "mt-3 p-3")}>
+              <Card className="mt-3 p-3">
                 <p className="text-sm text-foreground/90 leading-relaxed">
                   “Reflect with AI” feels like talking to a calm
                   mirror—questions, reframes, patterns. Not advice. Not
                   judgement.
                 </p>
-              </div>
-            </div>
+              </Card>
+            </Card>
           </div>
         </div>
 
         {/* Problem / Solution & Benefits */}
         <section className="mt-12 grid gap-6 md:grid-cols-3">
-          <div className={cn(liquidGlassCard, "p-6")}>
+          <Card className="p-6">
             <p className="text-sm font-medium tracking-tight">The problem</p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Most apps turn growth into performance: streaks, likes, feeds,
               pressure. Reflection becomes another thing to “win”.
             </p>
-          </div>
+          </Card>
 
-          <div className={cn(liquidGlassCard, "p-6")}>
+          <Card className="p-6">
             <p className="text-sm font-medium tracking-tight">The solution</p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               meletaó is built for attention and care: journal privately, set
               goals gently, and practise gratitude without validation loops.
             </p>
-          </div>
+          </Card>
 
-          <div className={cn(liquidGlassCard, "p-6")}>
+          <Card className="p-6">
             <p className="text-sm font-medium tracking-tight">The outcome</p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               More clarity, calmer thinking, and a simple system you’ll actually
               return to—because it feels safe.
             </p>
-          </div>
+          </Card>
         </section>
 
         {/* Social proof */}
         <section className="mt-12">
-          <div className={cn(liquidGlassCard, "p-6")}>
+          <Card className="p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-medium tracking-tight">
@@ -171,41 +166,47 @@ export default async function LandingPage() {
             </div>
 
             <div className="mt-5 grid gap-4 md:grid-cols-3">
-              <blockquote className={cn(liquidGlassCard, "p-4")}>
-                <p className="text-sm leading-relaxed text-foreground/90">
-                  “The only journaling app that doesn’t make me feel like I’m
-                  performing.”
-                </p>
-                <footer className="mt-3 text-xs text-muted-foreground">
-                  — Beta user
-                </footer>
-              </blockquote>
+              <Card className="p-4">
+                <blockquote>
+                  <p className="text-sm leading-relaxed text-foreground/90">
+                    “The only journaling app that doesn’t make me feel like I’m
+                    performing.”
+                  </p>
+                  <footer className="mt-3 text-xs text-muted-foreground">
+                    — Beta user
+                  </footer>
+                </blockquote>
+              </Card>
 
-              <blockquote className={cn(liquidGlassCard, "p-4")}>
-                <p className="text-sm leading-relaxed text-foreground/90">
-                  “The AI questions are genuinely helpful. It feels calm, not
-                  robotic.”
-                </p>
-                <footer className="mt-3 text-xs text-muted-foreground">
-                  — Beta user
-                </footer>
-              </blockquote>
+              <Card className="p-4">
+                <blockquote>
+                  <p className="text-sm leading-relaxed text-foreground/90">
+                    “The AI questions are genuinely helpful. It feels calm, not
+                    robotic.”
+                  </p>
+                  <footer className="mt-3 text-xs text-muted-foreground">
+                    — Beta user
+                  </footer>
+                </blockquote>
+              </Card>
 
-              <blockquote className={cn(liquidGlassCard, "p-4")}>
-                <p className="text-sm leading-relaxed text-foreground/90">
-                  “Goals without pressure is exactly what I needed.”
-                </p>
-                <footer className="mt-3 text-xs text-muted-foreground">
-                  — Beta user
-                </footer>
-              </blockquote>
+              <Card className="p-4">
+                <blockquote>
+                  <p className="text-sm leading-relaxed text-foreground/90">
+                    “Goals without pressure is exactly what I needed.”
+                  </p>
+                  <footer className="mt-3 text-xs text-muted-foreground">
+                    — Beta user
+                  </footer>
+                </blockquote>
+              </Card>
             </div>
-          </div>
+          </Card>
         </section>
 
         {/* Offer + CTA */}
         <section className="mt-12">
-          <div className={cn(liquidGlassCard, "p-6 md:p-8")}>
+          <Card className="p-6 md:p-8">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div className="space-y-2">
                 <h2 className="text-xl font-medium tracking-tight">
@@ -226,12 +227,12 @@ export default async function LandingPage() {
                 <Link href="/register">Get started</Link>
               </Button>
             </div>
-          </div>
+          </Card>
         </section>
 
         {/* Short form (optional, minimal) */}
         <section className="mt-12">
-          <div className={cn(liquidGlassCard, "p-6")}>
+          <Card className="p-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-sm font-medium tracking-tight">
@@ -244,21 +245,13 @@ export default async function LandingPage() {
 
               {/* Keep this simple—wire to your backend later */}
               <form className="flex w-full max-w-md gap-2">
-                <input
-                  type="email"
-                  required
-                  placeholder="Email address"
-                  className={cn(
-                    liquidGlassCard,
-                    "h-11 w-full px-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                  )}
-                />
+                <Input type="email" required placeholder="Email address" />
                 <Button variant="glass" className="h-11">
                   Join
                 </Button>
               </form>
             </div>
-          </div>
+          </Card>
         </section>
 
         {/* Footer (no distraction links) */}

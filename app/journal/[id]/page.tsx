@@ -3,9 +3,19 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { liquidGlassCard, liquidGlassButton } from "@/lib/liquid-glass";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { getEntry, deleteEntry, type JournalEntry } from "@/lib/journal-store";
 import { ArrowLeft, BookOpen, Plus, Sparkles, Trash2 } from "lucide-react";
 
@@ -55,7 +65,7 @@ export default function JournalEntryPage() {
     return (
       <main className="relative min-h-screen overflow-hidden">
         <div className="relative mx-auto max-w-2xl px-4 pb-28 pt-6">
-          <section className={cn(liquidGlassCard, "p-6")}>
+          <Card className="p-6">
             <p className="text-sm font-medium tracking-tight">Not found</p>
             <p className="mt-1 text-sm text-muted-foreground">
               This journal entry doesn’t exist (or was deleted).
@@ -71,7 +81,7 @@ export default function JournalEntryPage() {
                 </Link>
               </Button>
             </div>
-          </section>
+          </Card>
         </div>
       </main>
     );
@@ -81,13 +91,11 @@ export default function JournalEntryPage() {
     <main className="relative min-h-screen overflow-hidden">
       <div className="relative mx-auto max-w-2xl px-4 pb-28 pt-6">
         <header className="flex items-center justify-between">
-          <Link
-            href="/journal"
-            className={cn(liquidGlassButton, "h-10 w-10 text-foreground")}
-            aria-label="Back"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
+          <Button variant="glass" size="icon" asChild aria-label="Back">
+            <Link href="/journal">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          </Button>
 
           <div className="text-center">
             <p className="text-xs text-muted-foreground">Journal</p>
@@ -95,45 +103,58 @@ export default function JournalEntryPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Link
-              href={`/journal/${entry.id}/edit`}
-              className={cn(
-                liquidGlassButton,
-                "h-10 px-3 text-foreground inline-flex items-center gap-2"
-              )}
+            <Button
+              variant="glass"
+              asChild
+              className="h-10 px-3 text-foreground inline-flex items-center gap-2"
               aria-label="Edit entry"
               title="Edit entry"
             >
-              Edit
-            </Link>
+              <Link href={`/journal/${entry.id}/edit`}>Edit</Link>
+            </Button>
 
-            <button
-              type="button"
-              className={cn(liquidGlassButton, "h-10 w-10 text-foreground")}
-              aria-label="Delete entry"
-              title="Delete entry"
-              onClick={() => {
-                if (!confirm("Delete this entry? This can’t be undone."))
-                  return;
-                deleteEntry(entry.id);
-                router.push("/journal");
-              }}
-            >
-              <Trash2 className="h-5 w-5" />
-            </button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="glass" size="icon" aria-label="Delete entry" title="Delete entry">
+                  <Trash2 className="h-5 w-5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This can’t be undone. The journal entry will be permanently
+                    removed.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel asChild>
+                    <Button variant="glass">Cancel</Button>
+                  </AlertDialogCancel>
+                  <AlertDialogAction asChild>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        deleteEntry(entry.id);
+                        router.push("/journal");
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
-            <Link
-              href="/journal/new"
-              className={cn(liquidGlassButton, "h-10 w-10 text-foreground")}
-              aria-label="New entry"
-              title="New entry"
-            >
-              <Plus className="h-5 w-5" />
-            </Link>
+            <Button variant="glass" size="icon" asChild aria-label="New entry" title="New entry">
+              <Link href="/journal/new">
+                <Plus className="h-5 w-5" />
+              </Link>
+            </Button>
           </div>
         </header>
 
-        <section className={cn(liquidGlassCard, "mt-6 p-6")}>
+        <Card className="mt-6 p-6">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="inline-flex items-center gap-2">
@@ -161,7 +182,7 @@ export default function JournalEntryPage() {
               {entry.content}
             </p>
           </div>
-        </section>
+        </Card>
       </div>
     </main>
   );

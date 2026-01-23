@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { liquidGlassCard, liquidGlassButton } from "@/lib/liquid-glass";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Save, Sparkles, X } from "lucide-react";
 import type { Mood } from "@/lib/journal-store";
 
@@ -84,7 +86,6 @@ export function JournalEditor({
     } catch {
       // ignore
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftKey]);
 
   // Autosave draft (debounced)
@@ -133,13 +134,11 @@ export function JournalEditor({
     <div className="relative mx-auto max-w-2xl px-4 pb-28 pt-6">
       {/* Header */}
       <header className="flex items-center justify-between">
-        <Link
-          href={backHref}
-          className={cn(liquidGlassButton, "h-10 w-10 text-foreground")}
-          aria-label="Back"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
+        <Button variant="glass" size="icon" asChild aria-label="Back">
+          <Link href={backHref}>
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+        </Button>
 
         <div className="text-center">
           <p className="text-xs text-muted-foreground">Journal</p>
@@ -148,8 +147,10 @@ export function JournalEditor({
           </h1>
         </div>
 
-        <button
+        <Button
           type="button"
+          variant="glass"
+          size="icon"
           onClick={() => {
             setTitle(initialTitle);
             setContent(initialContent);
@@ -157,53 +158,44 @@ export function JournalEditor({
             clearDraft();
             setLastSavedAt(null);
           }}
-          className={cn(liquidGlassButton, "h-10 w-10 text-foreground")}
           aria-label="Reset"
           title="Reset"
         >
           <X className="h-5 w-5" />
-        </button>
+        </Button>
       </header>
 
       {/* Prompt */}
       {promptText && (
-        <section className={cn(liquidGlassCard, "mt-5 p-4")}>
+        <Card className="mt-5 p-4">
           <div className="flex items-start gap-2">
             <Sparkles className="mt-0.5 h-4 w-4 text-primary" />
             <p className="text-sm leading-relaxed text-foreground/90">
               {promptText}
             </p>
           </div>
-        </section>
+        </Card>
       )}
 
       {/* Editor */}
-      <section className={cn(liquidGlassCard, "mt-5 p-5")}>
+      <Card className="mt-5 p-5">
         <label className="block text-xs text-muted-foreground">
           Title (optional)
         </label>
-        <input
+        <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="A calmer morning…"
-          className={cn(
-            liquidGlassCard,
-            "mt-2 h-11 w-full px-3 text-sm outline-none",
-            "placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-          )}
+          className="mt-2"
         />
 
         <div className="mt-4">
           <label className="block text-xs text-muted-foreground">Write</label>
-          <textarea
+          <Textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="What’s on your mind?"
-            className={cn(
-              liquidGlassCard,
-              "mt-2 min-h-[260px] w-full resize-none p-3 text-base leading-relaxed outline-none",
-              "placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-            )}
+            className="mt-2 min-h-[260px] resize-none text-base leading-relaxed"
           />
           <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
             <span>{content.length} chars</span>
@@ -225,12 +217,13 @@ export function JournalEditor({
             {MOODS.map((m) => {
               const active = mood === m;
               return (
-                <button
+                <Button
                   key={m}
                   type="button"
+                  variant="glass"
+                  size="sm"
                   onClick={() => setMood(active ? null : m)}
                   className={cn(
-                    liquidGlassButton,
                     "h-9 px-3 text-xs",
                     active
                       ? "text-foreground bg-white/30"
@@ -238,12 +231,12 @@ export function JournalEditor({
                   )}
                 >
                   {m}
-                </button>
+                </Button>
               );
             })}
           </div>
         </div>
-      </section>
+      </Card>
 
       {/* Footer actions */}
       <section className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -264,7 +257,7 @@ export function JournalEditor({
       </section>
 
       {/* Optional: AI entry point (Premium later) */}
-      <section className={cn(liquidGlassCard, "mt-4 p-4")}>
+      <Card className="mt-4 p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-medium tracking-tight">
@@ -279,7 +272,7 @@ export function JournalEditor({
             Reflect
           </Button>
         </div>
-      </section>
+      </Card>
     </div>
   );
 }

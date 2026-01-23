@@ -3,8 +3,20 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { liquidGlassCard, liquidGlassButton } from "@/lib/liquid-glass";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   listGoals,
   pinGoal,
@@ -40,28 +52,26 @@ function metricLabel(goal: Goal) {
 
 export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
-
-  function refresh() {
-    setGoals(listGoals());
-  }
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    refresh();
-    window.addEventListener("focus", refresh);
-    return () => window.removeEventListener("focus", refresh);
+    const load = () => setGoals(listGoals());
+    load();
+    setMounted(true);
+
+    window.addEventListener("focus", load);
+    return () => window.removeEventListener("focus", load);
   }, []);
 
   return (
     <main className="relative min-h-screen overflow-hidden">
       <div className="relative mx-auto max-w-2xl px-4 pb-28 pt-6">
         <header className="flex items-center justify-between">
-          <Link
-            href="/today"
-            className={cn(liquidGlassButton, "h-10 w-10 text-foreground")}
-            aria-label="Back"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
+          <Button variant="glass" size="icon" asChild aria-label="Back">
+            <Link href="/today">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          </Button>
 
           <div className="text-center">
             <p className="text-xs text-muted-foreground">Goals</p>
@@ -76,8 +86,12 @@ export default function GoalsPage() {
           </Button>
         </header>
 
-        {goals.length === 0 ? (
-          <section className={cn(liquidGlassCard, "mt-6 p-6 text-center")}>
+        {!mounted ? (
+          <Card className="mt-6 p-6 text-center">
+            <p className="text-sm text-muted-foreground">Loading goals…</p>
+          </Card>
+        ) : goals.length === 0 ? (
+          <Card className="mt-6 p-6 text-center">
             <Target className="mx-auto h-6 w-6 text-primary" />
             <p className="mt-3 text-sm font-medium tracking-tight">
               No goals yet
@@ -91,7 +105,7 @@ export default function GoalsPage() {
                 Create goal
               </Link>
             </Button>
-          </section>
+          </Card>
         ) : (
           <section className="mt-6 space-y-3">
             {goals.map((g) => {
@@ -104,10 +118,9 @@ export default function GoalsPage() {
               const isActive = !!g.pinned;
 
               return (
-                <div
+                <Card
                   key={g.id}
                   className={cn(
-                    liquidGlassCard,
                     "p-5 transition-all duration-300",
                     // ✅ Active/pinned styling (subtle but obvious)
                     isActive &&
@@ -132,19 +145,14 @@ export default function GoalsPage() {
 
                         {/* ✅ Active pill */}
                         {isActive && (
-                          <span
-                            className={cn(
-                              liquidGlassButton,
-                              "h-6 px-2 text-[11px] leading-none",
-                              "inline-flex items-center gap-1",
-                              "text-foreground"
-                            )}
+                          <Badge
+                            variant="glass"
                             aria-label="Pinned to Today"
                             title="Pinned to Today"
                           >
                             <Sparkles className="h-3.5 w-3.5 text-primary" />
                             Active
-                          </span>
+                          </Badge>
                         )}
                       </div>
 
@@ -162,11 +170,11 @@ export default function GoalsPage() {
 
                     <div className="flex shrink-0 items-center gap-2">
                       {/* ✅ Pin button also shows state clearly */}
-                      <button
+                      <Button
                         type="button"
+                        variant="glass"
+                        size="icon"
                         className={cn(
-                          liquidGlassButton,
-                          "h-10 w-10 text-foreground transition-all duration-300",
                           isActive
                             ? "bg-white/30 ring-1 ring-primary/40"
                             : "hover:bg-white/20"
@@ -188,27 +196,49 @@ export default function GoalsPage() {
                             isActive ? "text-primary" : "text-foreground"
                           )}
                         />
-                      </button>
+                      </Button>
 
-                      <button
-                        type="button"
-                        className={cn(
-                          liquidGlassButton,
-                          "h-10 w-10 text-foreground hover:bg-white/20"
-                        )}
-                        title="Delete"
-                        aria-label="Delete goal"
-                        onClick={() => {
-                          if (
-                            !confirm("Delete this goal? This can’t be undone.")
-                          )
-                            return;
-                          deleteGoal(g.id);
-                          refresh();
-                        }}
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="glass"
+                            size="icon"
+                            className="hover:bg-white/20"
+                            title="Delete"
+                            aria-label="Delete goal"
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Delete this goal?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This can’t be undone. The goal will be permanently
+                              removed.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel asChild>
+                              <Button variant="glass">Cancel</Button>
+                            </AlertDialogCancel>
+                            <AlertDialogAction asChild>
+                              <Button
+                                variant="destructive"
+                                onClick={() => {
+                                  deleteGoal(g.id);
+                                  refresh();
+                                }}
+                              >
+                                Delete
+                              </Button>
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
 
@@ -261,7 +291,7 @@ export default function GoalsPage() {
                       </Button>
                     </div>
                   ) : null}
-                </div>
+                </Card>
               );
             })}
           </section>

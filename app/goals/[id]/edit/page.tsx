@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
 import { useParams, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { liquidGlassCard, liquidGlassButton } from "@/lib/liquid-glass";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save, RotateCcw } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ArrowLeft, Save, RotateCcw, Calendar as CalendarIcon } from "lucide-react";
 import {
   getGoal,
   updateGoal,
@@ -18,6 +21,21 @@ import {
 function isoOrEmpty(v?: string) {
   return v ?? "";
 }
+
+const isoToDate = (value: string) => {
+  if (!value) return undefined;
+  const [y, m, d] = value.split("-").map(Number);
+  if (!y || !m || !d) return undefined;
+  return new Date(y, m - 1, d);
+};
+
+const dateToIso = (value?: Date) => {
+  if (!value) return "";
+  const y = value.getFullYear();
+  const m = String(value.getMonth() + 1).padStart(2, "0");
+  const d = String(value.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
 
 export default function GoalEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -355,31 +373,99 @@ export default function GoalEditPage() {
                 <label className="block text-xs text-muted-foreground">
                   Start (optional)
                 </label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className={cn(
-                    liquidGlassCard,
-                    "mt-2 h-11 w-full px-3 text-sm outline-none",
-                    "focus-visible:ring-2 focus-visible:ring-ring"
-                  )}
-                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(
+                        liquidGlassCard,
+                        "mt-2 h-11 w-full px-3 text-left text-sm outline-none",
+                        "focus-visible:ring-2 focus-visible:ring-ring"
+                      )}
+                    >
+                      <span className="flex items-center justify-between">
+                        <span
+                          className={cn(!startDate && "text-muted-foreground")}
+                        >
+                          {startDate
+                            ? format(isoToDate(startDate)!, "PPP")
+                            : "Pick a date"}
+                        </span>
+                        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                      </span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={isoToDate(startDate)}
+                      onSelect={(date) => setStartDate(dateToIso(date))}
+                      className="rounded-lg border"
+                      initialFocus
+                    />
+                    {startDate ? (
+                      <div className="flex justify-end px-3 pb-3 pt-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setStartDate("")}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    ) : null}
+                  </PopoverContent>
+                </Popover>
               </div>
               <div>
                 <label className="block text-xs text-muted-foreground">
                   End (optional)
                 </label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className={cn(
-                    liquidGlassCard,
-                    "mt-2 h-11 w-full px-3 text-sm outline-none",
-                    "focus-visible:ring-2 focus-visible:ring-ring"
-                  )}
-                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(
+                        liquidGlassCard,
+                        "mt-2 h-11 w-full px-3 text-left text-sm outline-none",
+                        "focus-visible:ring-2 focus-visible:ring-ring"
+                      )}
+                    >
+                      <span className="flex items-center justify-between">
+                        <span
+                          className={cn(!endDate && "text-muted-foreground")}
+                        >
+                          {endDate
+                            ? format(isoToDate(endDate)!, "PPP")
+                            : "Pick a date"}
+                        </span>
+                        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                      </span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={isoToDate(endDate)}
+                      onSelect={(date) => setEndDate(dateToIso(date))}
+                      className="rounded-lg border"
+                      initialFocus
+                    />
+                    {endDate ? (
+                      <div className="flex justify-end px-3 pb-3 pt-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEndDate("")}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    ) : null}
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
           )}

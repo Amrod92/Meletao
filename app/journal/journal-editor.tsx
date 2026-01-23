@@ -93,7 +93,6 @@ export function JournalEditor({
     } catch {
       // ignore
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftKey]);
 
   // Autosave draft (debounced)

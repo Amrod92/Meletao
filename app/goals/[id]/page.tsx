@@ -4,8 +4,19 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { liquidGlassCard, liquidGlassButton } from "@/lib/liquid-glass";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   deleteGoal,
   getGoal,
@@ -81,7 +92,7 @@ export default function GoalDetailPage() {
     return (
       <main className="relative min-h-screen overflow-hidden">
         <div className="relative mx-auto max-w-2xl px-4 pb-28 pt-6">
-          <section className={cn(liquidGlassCard, "p-6")}>
+          <Card className="p-6">
             <p className="text-sm font-medium tracking-tight">Not found</p>
             <p className="mt-1 text-sm text-muted-foreground">
               This goal doesn’t exist (or was deleted).
@@ -89,7 +100,7 @@ export default function GoalDetailPage() {
             <Button variant="glass" asChild className="mt-4">
               <Link href="/goals">Back to goals</Link>
             </Button>
-          </section>
+          </Card>
         </div>
       </main>
     );
@@ -100,13 +111,11 @@ export default function GoalDetailPage() {
       <div className="relative mx-auto max-w-2xl px-4 pb-28 pt-6">
         {/* Header */}
         <header className="flex items-center justify-between">
-          <Link
-            href="/goals"
-            className={cn(liquidGlassButton, "h-10 w-10 text-foreground")}
-            aria-label="Back"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
+          <Button variant="glass" size="icon" asChild aria-label="Back">
+            <Link href="/goals">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          </Button>
 
           <div className="text-center min-w-0 px-2">
             <p className="text-xs text-muted-foreground">Goal</p>
@@ -117,22 +126,17 @@ export default function GoalDetailPage() {
 
           <div className="flex items-center gap-2">
             {/* Edit */}
-            <Link
-              href={`/goals/${goal.id}/edit`}
-              className={cn(liquidGlassButton, "h-10 w-10 text-foreground")}
-              aria-label="Edit goal"
-              title="Edit goal"
-            >
-              <Pencil className="h-5 w-5" />
-            </Link>
+            <Button variant="glass" size="icon" asChild aria-label="Edit goal" title="Edit goal">
+              <Link href={`/goals/${goal.id}/edit`}>
+                <Pencil className="h-5 w-5" />
+              </Link>
+            </Button>
 
             {/* Pin */}
-            <button
-              className={cn(
-                liquidGlassButton,
-                "h-10 w-10 text-foreground",
-                goal.pinned && "bg-white/30"
-              )}
+            <Button
+              variant="glass"
+              size="icon"
+              className={cn(goal.pinned && "bg-white/30")}
               title={goal.pinned ? "Pinned" : "Pin to Today"}
               aria-label={goal.pinned ? "Pinned" : "Pin to Today"}
               onClick={() => {
@@ -141,26 +145,45 @@ export default function GoalDetailPage() {
               }}
             >
               <Pin className="h-5 w-5" />
-            </button>
+            </Button>
 
             {/* Delete */}
-            <button
-              className={cn(liquidGlassButton, "h-10 w-10 text-foreground")}
-              title="Delete"
-              aria-label="Delete goal"
-              onClick={() => {
-                if (!confirm("Delete this goal? This can’t be undone.")) return;
-                deleteGoal(goal.id);
-                router.push("/goals");
-              }}
-            >
-              <Trash2 className="h-5 w-5" />
-            </button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="glass" size="icon" title="Delete" aria-label="Delete goal">
+                  <Trash2 className="h-5 w-5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this goal?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This can’t be undone. The goal will be permanently removed.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel asChild>
+                    <Button variant="glass">Cancel</Button>
+                  </AlertDialogCancel>
+                  <AlertDialogAction asChild>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        deleteGoal(goal.id);
+                        router.push("/goals");
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </header>
 
         {/* Main card */}
-        <section className={cn(liquidGlassCard, "mt-6 p-6")}>
+        <Card className="mt-6 p-6">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="inline-flex items-center gap-2">
@@ -254,7 +277,7 @@ export default function GoalDetailPage() {
             MVP controls: quick increments. Next we can add “set progress” and
             history/streaks.
           </p>
-        </section>
+        </Card>
       </div>
     </main>
   );
